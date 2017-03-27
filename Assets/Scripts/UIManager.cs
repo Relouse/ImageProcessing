@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.IO;
+
 public class UIManager : MonoBehaviour {
 
     #region Properties
-    [SerializeField]
-    private Image originalImage, extraImage;
+    
+    public Image originalImage, extraImage;
+    [SerializeField] private Button saveButton, undoButton, redoButton;
+    
     public Color[] OriginalImageSpritePixels
     {
         get
@@ -54,9 +58,14 @@ public class UIManager : MonoBehaviour {
         temp.Apply();
 
         extraImage.sprite = Sprite.Create(temp, new Rect(0, 0, temp.width, temp.height), new Vector2(0.5f, 0.5f));
-
         extraImage.preserveAspect = true;
+
+        ChooseEffect(0);
+
         imageProcessingMethodsDropdown.onValueChanged.AddListener(ChooseEffect);
+        saveButton.onClick.AddListener(SaveImage);
+        undoButton.onClick.AddListener(ApplicationManager.Instance.Undo);
+        redoButton.onClick.AddListener(ApplicationManager.Instance.Redo);
     }
     #endregion
 
@@ -73,6 +82,12 @@ public class UIManager : MonoBehaviour {
     private void ChooseEffect(int numb)
     {
         ImageProcessingManager.Instance.AvaibleProcessingMethods[imageProcessingMethodsDropdown.options[numb].text].DynamicInvoke(extraImage.sprite);
+        ApplicationManager.Instance.SaveState(originalImage.sprite, extraImage.sprite);
+    }
+    private void SaveImage()
+    {
+        byte[] bytes = extraImage.sprite.texture.EncodeToPNG();
+        File.WriteAllBytes(Application.dataPath + "/Image.png", bytes);
     }
     #endregion
 }
