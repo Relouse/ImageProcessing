@@ -9,8 +9,8 @@ public class UIManager : MonoBehaviour {
     #region Properties
     
     public Image originalImage, extraImage;
-    [SerializeField] private Button saveButton, undoButton, redoButton;
-    
+    [SerializeField] private Button saveButton, undoButton, redoButton, loadButton;
+    [SerializeField] private Text spriteName,spriteSize;
     public Color[] OriginalImageSpritePixels
     {
         get
@@ -66,9 +66,10 @@ public class UIManager : MonoBehaviour {
         saveButton.onClick.AddListener(SaveImage);
         undoButton.onClick.AddListener(ApplicationManager.Instance.Undo);
         redoButton.onClick.AddListener(ApplicationManager.Instance.Redo);
+        spriteName.text = "File: " + "<b><color=yellow>" + originalImage.sprite.name + ".png</color></b>";
+        spriteSize.text = "Size: " + "<b><color=yellow>" + originalImage.sprite.texture.width + "x" + originalImage.sprite.texture.height + "</color></b>";
     }
     #endregion
-
     public void FillImageProcessingMethods()
     {
         imageProcessingMethodsDropdown.ClearOptions();
