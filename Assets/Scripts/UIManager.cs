@@ -3,14 +3,25 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
+using UnityEngine.EventSystems;
 
 public class UIManager : MonoBehaviour {
 
     #region Properties
     
     public Image originalImage, extraImage;
-    [SerializeField] private Button saveButton, undoButton, redoButton, loadButton;
+    [SerializeField] private Button saveButton, undoButton, redoButton, loadButton, binarizationApplyButton;
     [SerializeField] private Text spriteName,spriteSize;
+    [SerializeField] private GameObject _binarizationWindowTools;
+    [SerializeField] private Slider binarizationBorderSlider;
+
+    public GameObject BinarizationWindowTools
+    {
+        get
+        {
+            return _binarizationWindowTools;
+        }
+    }
     public Color[] OriginalImageSpritePixels
     {
         get
@@ -21,7 +32,18 @@ public class UIManager : MonoBehaviour {
     private Color[] originalImagePixels;
     [SerializeField]
     private Dropdown imageProcessingMethodsDropdown;
-
+    private bool _mouseOnOriginalImage;
+    public bool MouseOnOriginalImage
+    {
+        get
+        {
+            return _mouseOnOriginalImage;
+        }
+        set
+        {
+            _mouseOnOriginalImage = value;
+        }
+    }
     #region Singleton
     private static UIManager instance = null;
     public static UIManager Instance
@@ -66,10 +88,22 @@ public class UIManager : MonoBehaviour {
         saveButton.onClick.AddListener(SaveImage);
         undoButton.onClick.AddListener(ApplicationManager.Instance.Undo);
         redoButton.onClick.AddListener(ApplicationManager.Instance.Redo);
+        binarizationApplyButton.onClick.AddListener(ApplyBinarizationButton);
+        binarizationBorderSlider.onValueChanged.AddListener(ChangeBinarizationBorderSliderValueAndText);
         spriteName.text = "File: " + "<b><color=yellow>" + originalImage.sprite.name + ".png</color></b>";
         spriteSize.text = "Size: " + "<b><color=yellow>" + originalImage.sprite.texture.width + "x" + originalImage.sprite.texture.height + "</color></b>";
     }
     #endregion
+    public void ChangeBinarizationBorderSliderValueAndText(float value)
+    {
+        ImageProcessingManager.Instance.ChangeBinarizationBorderValue(binarizationBorderSlider.value / binarizationBorderSlider.maxValue);
+        binarizationBorderSlider.transform.FindChild("Handle Slide Area/Handle/Text").GetComponent<Text>().text = ((int)value).ToString();
+    }
+   private void ApplyBinarizationButton()
+    {
+        BinarizationWindowTools.SetActive(false);
+        ImageProcessingManager.Instance.ApplyBinarization();
+    }
     public void FillImageProcessingMethods()
     {
         imageProcessingMethodsDropdown.ClearOptions();
@@ -82,13 +116,28 @@ public class UIManager : MonoBehaviour {
     }
     private void ChooseEffect(int numb)
     {
-        ImageProcessingManager.Instance.AvaibleProcessingMethods[imageProcessingMethodsDropdown.options[numb].text].DynamicInvoke(extraImage.sprite);
-        ApplicationManager.Instance.SaveState(originalImage.sprite, extraImage.sprite);
+        if (!ApplicationManager.Instance.DoingRedoOrUndo)
+        {
+            ImageProcessingManager.Instance.AvaibleProcessingMethods[imageProcessingMethodsDropdown.options[numb].text].DynamicInvoke(extraImage.sprite);
+            ApplicationManager.Instance.SaveState(originalImage.sprite, extraImage.sprite, numb);
+        }
     }
     private void SaveImage()
     {
         byte[] bytes = extraImage.sprite.texture.EncodeToPNG();
         File.WriteAllBytes(Application.dataPath + "/Image.png", bytes);
+    }
+    public void SetEffectsDropdownCurrentValue(int i)
+    {
+        imageProcessingMethodsDropdown.value = i;
+    }
+    public void SetUndoButtonInteractable(bool interactable)
+    {
+        undoButton.interactable = interactable;
+    }
+    public void SetRedoButtonInteractable(bool interactable)
+    {
+        redoButton.interactable = interactable;
     }
     #endregion
 }
