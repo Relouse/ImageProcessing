@@ -9,12 +9,14 @@ public class UIManager : MonoBehaviour {
 
     #region Properties
     
-    public Image originalImage, extraImage;
+    public Image OriginalImage, ExtraImage;
     [SerializeField] private Button saveButton, undoButton, redoButton, loadButton, binarizationApplyButton;
     [SerializeField] private Text spriteName,spriteSize;
-    [SerializeField] private GameObject _binarizationWindowTools;
+    
     [SerializeField] private Slider binarizationBorderSlider;
 
+    [SerializeField]
+    private GameObject _binarizationWindowTools;
     public GameObject BinarizationWindowTools
     {
         get
@@ -22,6 +24,7 @@ public class UIManager : MonoBehaviour {
             return _binarizationWindowTools;
         }
     }
+    private Color[] originalImagePixels;
     public Color[] OriginalImageSpritePixels
     {
         get
@@ -29,28 +32,18 @@ public class UIManager : MonoBehaviour {
             return originalImagePixels;
         }
     }
-    private Color[] originalImagePixels;
+    
     [SerializeField]
     private Dropdown imageProcessingMethodsDropdown;
-    private bool _mouseOnOriginalImage;
-    public bool MouseOnOriginalImage
-    {
-        get
-        {
-            return _mouseOnOriginalImage;
-        }
-        set
-        {
-            _mouseOnOriginalImage = value;
-        }
-    }
+    
+    
     #region Singleton
-    private static UIManager instance = null;
+    private static UIManager _instance = null;
     public static UIManager Instance
     {
         get
         {
-            return instance;
+            return _instance;
         }
     }
     #endregion
@@ -60,9 +53,9 @@ public class UIManager : MonoBehaviour {
     private void Awake()
     {
         #region Singleton implementation
-        if (instance == null)
+        if (_instance == null)
         {
-            instance = this;
+            _instance = this;
             DontDestroyOnLoad(gameObject);
         }
         else
@@ -74,13 +67,13 @@ public class UIManager : MonoBehaviour {
     }
     private void Start()
     {
-        originalImagePixels = originalImage.sprite.texture.GetPixels();
-        Texture2D temp = new Texture2D(originalImage.sprite.texture.width, originalImage.sprite.texture.height);
+        originalImagePixels = OriginalImage.sprite.texture.GetPixels();
+        Texture2D temp = new Texture2D(OriginalImage.sprite.texture.width, OriginalImage.sprite.texture.height);
         temp.SetPixels(originalImagePixels);
         temp.Apply();
 
-        extraImage.sprite = Sprite.Create(temp, new Rect(0, 0, temp.width, temp.height), new Vector2(0.5f, 0.5f));
-        extraImage.preserveAspect = true;
+        ExtraImage.sprite = Sprite.Create(temp, new Rect(0, 0, temp.width, temp.height), new Vector2(0.5f, 0.5f));
+        ExtraImage.preserveAspect = true;
 
         ChooseEffect(0);
 
@@ -90,8 +83,8 @@ public class UIManager : MonoBehaviour {
         redoButton.onClick.AddListener(ApplicationManager.Instance.Redo);
         binarizationApplyButton.onClick.AddListener(ApplyBinarizationButton);
         binarizationBorderSlider.onValueChanged.AddListener(ChangeBinarizationBorderSliderValueAndText);
-        spriteName.text = "File: " + "<b><color=yellow>" + originalImage.sprite.name + ".png</color></b>";
-        spriteSize.text = "Size: " + "<b><color=yellow>" + originalImage.sprite.texture.width + "x" + originalImage.sprite.texture.height + "</color></b>";
+        spriteName.text = "File: " + "<b><color=yellow>" + OriginalImage.sprite.name + ".png</color></b>";
+        spriteSize.text = "Size: " + "<b><color=yellow>" + OriginalImage.sprite.texture.width + "x" + OriginalImage.sprite.texture.height + "</color></b>";
     }
     #endregion
     public void ChangeBinarizationBorderSliderValueAndText(float value)
@@ -116,15 +109,13 @@ public class UIManager : MonoBehaviour {
     }
     private void ChooseEffect(int numb)
     {
-        if (!ApplicationManager.Instance.DoingRedoOrUndo)
-        {
-            ImageProcessingManager.Instance.AvaibleProcessingMethods[imageProcessingMethodsDropdown.options[numb].text].DynamicInvoke(extraImage.sprite);
-            ApplicationManager.Instance.SaveState(originalImage.sprite, extraImage.sprite, numb);
-        }
+        if (ApplicationManager.Instance.DoingRedoOrUndo) return;
+        ImageProcessingManager.Instance.AvaibleProcessingMethods[imageProcessingMethodsDropdown.options[numb].text].DynamicInvoke(ExtraImage.sprite);
+        ApplicationManager.Instance.SaveState(OriginalImage.sprite, ExtraImage.sprite, numb);
     }
     private void SaveImage()
     {
-        byte[] bytes = extraImage.sprite.texture.EncodeToPNG();
+        byte[] bytes = ExtraImage.sprite.texture.EncodeToPNG();
         File.WriteAllBytes(Application.dataPath + "/Image.png", bytes);
     }
     public void SetEffectsDropdownCurrentValue(int i)

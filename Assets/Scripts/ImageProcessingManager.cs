@@ -84,7 +84,7 @@ public class ImageProcessingManager : MonoBehaviour {
     
     public void ApplyBinarization()
     {
-        Sprite sprite = UIManager.Instance.extraImage.sprite;
+        Sprite sprite = UIManager.Instance.ExtraImage.sprite;
         Color[] pixels = sprite.texture.GetPixels();
         ApplyOriginal(sprite);
         Debug.Log(_binarizationBorder);
