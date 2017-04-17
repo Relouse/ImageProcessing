@@ -15,7 +15,24 @@ public class ImageProcessingManager : MonoBehaviour {
         }
     }
     private delegate void ApplyEffect(Sprite sprite);
-    
+    public enum Effects
+    {
+        Original,
+        Negative,
+        Binarization,
+        ShadesOfGray
+    }
+    private Effects _currentEffect;
+    public Effects CurrentEffect
+    {
+        get
+        {
+            return _currentEffect;
+        }
+    }
+    private Color _firstBinarizationColor, _secondBinarizationColor;
+    public Color FirstBinarizationColor { get { return _firstBinarizationColor; } set { _firstBinarizationColor = value; } }
+    public Color SecondBinarizationColor { get { return _secondBinarizationColor; } set { _secondBinarizationColor = value; } }
     #region Singleton
     private static ImageProcessingManager instance = null;
     public static ImageProcessingManager Instance
@@ -50,17 +67,19 @@ public class ImageProcessingManager : MonoBehaviour {
     {
         avaibleProcessingMethods.Add("Original", new ApplyEffect(ApplyOriginal));
         avaibleProcessingMethods.Add("Negative", new ApplyEffect(ApplyNegative));
-        avaibleProcessingMethods.Add("Binarization", new ApplyEffect(StartBinarization));
+        avaibleProcessingMethods.Add("Binarization", new ApplyEffect(ApplyBinarization));
         avaibleProcessingMethods.Add("Shades of gray", new ApplyEffect(ApplyShadesOfGray));
         //avaibleProcessingMethods.Add("Brightness", new ApplyEffect(ApplyShadesOfGray));
         if (avaibleProcessingMethods != null)
             UIManager.Instance.FillImageProcessingMethods();
 
     }
+    #endregion
     private void ApplyOriginal(Sprite sprite)
     {
         sprite.texture.SetPixels(UIManager.Instance.OriginalImageSpritePixels);
         sprite.texture.Apply();
+        _currentEffect = Effects.Original;
     }
     
     private void ApplyNegative(Sprite sprite)
@@ -72,28 +91,25 @@ public class ImageProcessingManager : MonoBehaviour {
         }
         sprite.texture.SetPixels(pixels);
         sprite.texture.Apply();
+        _currentEffect = Effects.Negative;
     }
     public void ChangeBinarizationBorderValue(float value)
     {
         _binarizationBorder = value;
-    }
-    private void StartBinarization(Sprite sprite)
-    {
-        UIManager.Instance.BinarizationWindowTools.SetActive(true);
+        
     }
     
-    public void ApplyBinarization()
+    public void ApplyBinarization(Sprite sprite)
     {
-        Sprite sprite = UIManager.Instance.ExtraImage.sprite;
         Color[] pixels = sprite.texture.GetPixels();
-        ApplyOriginal(sprite);
-        Debug.Log(_binarizationBorder);
+
         for (int i = 0; i < pixels.Length; i++)
         {
-            pixels[i] = GetColorBrightness(pixels[i]) > _binarizationBorder ? Color.white : Color.black;
+            pixels[i] = GetColorBrightness(pixels[i]) > _binarizationBorder ? _firstBinarizationColor : _secondBinarizationColor;
         }
         sprite.texture.SetPixels(pixels);
         sprite.texture.Apply();
+        _currentEffect = Effects.Binarization;
     }
     private float GetColorBrightness(Color color)
     {
@@ -111,11 +127,11 @@ public class ImageProcessingManager : MonoBehaviour {
         }
         sprite.texture.SetPixels(pixels);
         sprite.texture.Apply();
+        _currentEffect = Effects.ShadesOfGray;
     }
     public void ApplyBrightness(Sprite sprite)
     {
 
     }
-    #endregion
     #endregion
 }

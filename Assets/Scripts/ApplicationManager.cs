@@ -23,11 +23,12 @@ public class ApplicationManager : MonoBehaviour
     {
         public Color[] Original, Edited;
         public int EffectsDropdownValue;
+        public float binarizationValue;
+        public Color firstBinarizationColor, secondBinarizationColor;
     }
 
     private readonly List<State> _states = new List<State>();
 
-    public bool DoingRedoOrUndo { get; private set; }
 
     #endregion
 
@@ -65,13 +66,17 @@ public class ApplicationManager : MonoBehaviour
     /// <param name="originalSprite">Оригинальное изображение</param>
     /// <param name="extraSprite">Измененное изображение</param>
     /// <param name="dropDownValue">Текущее значение в списке эффектов</param>
-    public void SaveState(Sprite originalSprite, Sprite extraSprite, int dropDownValue)
+    public void SaveState(Sprite originalSprite, Sprite extraSprite, int dropDownValue, float binarValue, Color firstBinarColor, Color secondBinarColor)
     {
         _states.Add(new State
         {
             Original = originalSprite.texture.GetPixels(),
             Edited = extraSprite.texture.GetPixels(),
-            EffectsDropdownValue = dropDownValue
+            EffectsDropdownValue = dropDownValue,
+            binarizationValue = binarValue,
+            firstBinarizationColor = firstBinarColor,
+            secondBinarizationColor = secondBinarColor
+
         });
 
         _maxStates = _states.Count;
@@ -97,7 +102,7 @@ public class ApplicationManager : MonoBehaviour
     {
         if (_currentState > minState)
         {
-            DoingRedoOrUndo = true;
+            
             _currentState--;
             SetSpritesByCurrentState();
             CheckStatesBordersAndSetUndoRedoInteractable();
@@ -111,7 +116,6 @@ public class ApplicationManager : MonoBehaviour
     {
         if (_currentState < _maxStates - 1)
         {
-            DoingRedoOrUndo = true;
             _currentState++;
             SetSpritesByCurrentState();
             CheckStatesBordersAndSetUndoRedoInteractable();
@@ -129,9 +133,11 @@ public class ApplicationManager : MonoBehaviour
         UIManager.Instance.ExtraImage.sprite.texture.Apply();
 
         UIManager.Instance.SetEffectsDropdownCurrentValue(_states[_currentState].EffectsDropdownValue);
+        UIManager.Instance.SetBinarizationSliderValue(_states[_currentState].binarizationValue);
 
-        DoingRedoOrUndo = false;
-            //Присваивание нужно именно тут чтобы избежать лишнего вызова ChooseEffect, который вызывается из-за смены значения в Dropdown эффектов
+        UIManager.Instance.ChangeFistBinarizationColorValue(_states[_currentState].firstBinarizationColor);
+        UIManager.Instance.ChangeSecondBinarizationColorValue(_states[_currentState].secondBinarizationColor);
+
     }
 
     #endregion
